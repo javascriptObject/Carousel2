@@ -1,2 +1,186 @@
-# Carousel2
-js左右箭头按钮控制图片轮播滚动
+# js左右箭头按钮控制图片轮播滚动Carousel2
+
+效果如下：
+![](images/img.gif)
+
+all code:
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+    <title>js左右箭头按钮控制图片轮播滚动</title>
+	<style>
+		*{margin:0;padding:0;list-style-type:none;}
+		a,img{border:0;}
+		body{font:12px/180% Arial, Helvetica, sans-serif, "新宋体";}
+		/* case */
+		.case{height:627px;overflow:hidden;width:891px;margin:0 auto;}
+		.case_box{position:relative;margin:140px auto 0px;width:860px;height:470px;overflow:hidden}
+		.case_box p{z-index:2;position:absolute;text-indent:-9999px;width:28px;height:51px;top:40%;cursor:pointer}
+		.case_box .prev{text-indent:-9999px;background:url(images/previous.png) no-repeat;left:0px}
+		.case_box .next{background:url(images/next.png) no-repeat;top:40%;right:0px}
+		.case_box ul{position:absolute;height:470px;overflow:hidden;top:0px;left:0px}
+		.case_box ul li{width:860px;float:left;height:470px}
+		.case_box ol{position:absolute;bottom:0;left:50%;margin:0 0 0 -65px;height:12px;z-index:99;}
+		.case_box ol li{float:left;margin:0 4px;display:inline;width:12px;height:12px;line-height:999em;background:url(images/pagination.png) no-repeat;overflow:hidden;cursor:pointer;}
+		.case_box ol li.active{background-position:0 -12px;}
+	</style>
+</head>
+<body>
+<div class="case">
+	<div id="slider" class="case_box">
+		<ul>
+			<li class="case_1"><a href="#"><img src="images/case_1.png"/></a></li>
+			<li class="case_2"><a href="#"><img src="images/case_2.png"/></a></li>
+			<li class="case_3"><a href="#"><img src="images/case_3.png"/></a></li>
+			<li class="case_4"><a href="#"><img src="images/case_4.png"/></a></li>
+			<li class="case_5"><a href="#"><img src="images/case_5.png"/></a></li>
+			<li class="case_6"><a href="#"><img src="images/case_6.png"/></a></li>
+		</ul>
+	</div>
+</div>
+</body>
+</html>
+<script>
+    var Effect = (function() {
+        var Slider = function(o) {
+            this.setting      = typeof o === 'object' ? o : {};
+            this.target       = this.setting.target || 'slider';
+            this.showMarkers  = this.setting.showMarkers || false;
+            this.showControls = this.setting.showControls || false;
+            this.timer        = null;
+            this.currentTime  = null;
+            this.ms           = 35;
+            this.autoMs       = 3000;
+            this.iTarget      = 0;
+            this.nextTarget   = 0;
+            this.speed        = 0;
+            this.init();
+            this.handleEvent();
+        };
+        Slider.prototype = {
+            init: function() {
+                this.obj      = document.getElementById(this.target);
+                this.oUl      = this.obj.getElementsByTagName('ul')[0];
+                this.aUlLis   = this.oUl.getElementsByTagName('li');
+                this.width    = this.aUlLis[0].offsetWidth;
+                this.number   = this.aUlLis.length;
+                this.oUl.style.width = this.width * this.number + 'px';
+                if(this.showMarkers) {
+                    var oDiv = document.createElement('div');
+                    var aLis = [];
+                    for(var i = 0; i < this.number; i++) {
+                        aLis.push('<li>'+ (i+1) +'<\/li>');
+                    }
+                    oDiv.innerHTML = '<ol>'+ aLis.join('') +'<\/ol>';
+                    this.obj.appendChild(oDiv.firstChild);
+                    this.aLis = this.obj.getElementsByTagName('ol')[0].getElementsByTagName('li');
+                    this.aLis[0].className = 'active';
+                    oDiv = null;
+                }
+                if(this.showControls) {
+                    this.oPrev = document.createElement('p');
+                    this.oNext = document.createElement('p');
+                    this.oPrev.className = 'prev';
+                    this.oPrev.innerHTML = '&laquo;';
+                    this.oNext.className = 'next';
+                    this.oNext.innerHTML = '&raquo;';
+                    this.obj.appendChild(this.oPrev);
+                    this.obj.appendChild(this.oNext);
+                }
+            },
+            handleEvent: function() {
+                var that = this;
+                this.currentTime = setInterval(function() {
+                    that.autoPlay();
+                }, this.autoMs);
+                this.addEvent(this.obj, 'mouseover', function() {
+                    clearInterval(that.currentTime);
+                });
+                this.addEvent(this.obj, 'mouseout', function() {
+                    that.currentTime = setInterval(function() {
+                        that.autoPlay();
+                    }, that.autoMs);
+                });
+                if(this.showMarkers) {
+                    for(var i = 0; i < this.number; i++) {
+                        var el = this.aLis[i];
+                        (function(index) {
+                            that.addEvent(el, 'mouseover', function() {
+                                that.goTime(index);
+                            });
+                        })(i);
+                    }
+                }
+                if(this.showControls) {
+                    this.addEvent(this.oPrev, 'click', function() {
+                        that.fnPrev();
+                    });
+                    this.addEvent(this.oNext, 'click', function() {
+                        that.autoPlay();
+                    });
+                }
+            },
+            addEvent: function(el, type, fn) {
+                if(window.addEventListener) {
+                    el.addEventListener(type, fn, false);
+                }
+                else if(window.attachEvent) {
+                    el.attachEvent('on' + type, fn);
+                }
+            },
+            fnPrev: function() {
+                this.nextTarget--;
+                if(this.nextTarget < 0) {
+                    this.nextTarget = this.number - 1;
+                }
+                this.goTime(this.nextTarget);
+            },
+            autoPlay: function() {
+                this.nextTarget++;
+                if(this.nextTarget >= this.number) {
+                    this.nextTarget = 0;
+                }
+                this.goTime(this.nextTarget);
+            },
+            goTime: function(index) {
+                var that = this;
+                if(this.showMarkers) {
+                    for(var i = 0; i < this.number; i++) {
+                        i == index ? this.aLis[i].className = 'active' : this.aLis[i].className = '';
+                    }
+                }
+                this.iTarget = -index * this.width;
+                if(this.timer) {
+                    clearInterval(this.timer);
+                }
+                this.timer = setInterval(function() {
+                    that.doMove(that.iTarget);
+                }, this.ms);
+            },
+            doMove: function(target) {
+                this.oUl.style.left = this.speed + 'px';
+                this.speed += (target - this.oUl.offsetLeft) / 3;
+                if(Math.abs(target - this.oUl.offsetLeft) === 0) {
+                    this.oUl.style.left = target + 'px';
+                    clearInterval(this.timer);
+                    this.timer = null;
+                }
+            }
+        };
+        return {
+            slider: function(o) {
+                var tt = new Slider(o);
+            }
+        };
+    })();
+    // 调用语句
+    Effect.slider({
+        'targetElement': 'slider',
+        'showMarkers': true,
+        'showControls': true
+    });
+</script>
+
+```
